@@ -13,7 +13,7 @@ The short reads were primarily used for estimation of genome size and heterozygo
 
 The meryl file was uploaded to http://qb.cshl.edu/genomescope/genomescope2.0/ and analysed with default parameters for genome size and heterozygosity estimation.
 
-Contigs, scaffolds and final assembly were all assessed with Merqury. 
+Contigs, scaffolds and final assembly were all assessed with Merqury.
 
 	merqury.sh short-reads.meryl asm.fasta QV
 
@@ -33,21 +33,21 @@ Firstly, we map the assembly with HiFi long reads with this argument using minim
 
 Next, we followed purge_dups pipeline with the following commands:
 
-# calculate read depth histogram and base-level read depth
-pbcstat *paf.gz
-calcuts PB.stat > cutoffs 2>calcuts.log
+	# calculate read depth histogram and base-level read depth
+	pbcstat *paf.gz
+	calcuts PB.stat > cutoffs 2>calcuts.log
 
-# split the assembly and do self-alignment
-split_fa asm.fasta > asm.fasta.split
-minimap2 -xasm5 -DP asm.fasta.split asm.fasta.split | gzip -c - > asm.split.self.paf.gz
+	# split the assembly and do self-alignment
+	split_fa asm.fasta > asm.fasta.split
+	minimap2 -xasm5 -DP asm.fasta.split asm.fasta.split | gzip -c - > asm.split.self.paf.gz
 
-# identify regions and sequences to the haplobin
-purge_dups -2 -T cutoffs -c PB.base.cov asm.split.self.paf.gz > dups.bed 2> purge_dups.log
+	# identify regions and sequences to the haplobin
+	purge_dups -2 -T cutoffs -c PB.base.cov asm.split.self.paf.gz > dups.bed 2> purge_dups.log
 
-# get purged primary and haplotig sequences from draft assembly
-get_seqs -e dups.bed asm.fasta
+	# get purged primary and haplotig sequences from draft assembly
+	get_seqs -e dups.bed asm.fasta
 
-filterbyname.sh in=asm.fasta out=purged_asm.fasta names=junk.list exclude
+	filterbyname.sh in=asm.fasta out=purged_asm.fasta names=junk.list exclude
 
 Scaffolding
 
@@ -58,10 +58,10 @@ We used the Arima Mapping Pipeline Guidelines to map the HiC short-reads data ag
 Visualising HiC contact maps
 
 We used Juicebox to visualise HiC contact maps and to join scaffolds with strong signals. To generate a .hic and .assembly file as inputs to Juicebox, we run with the following commands:
-	
+
 	# index
 	samtools faidx asm.fasta
-	
+
 	# generate .assembly file
 	./yahs/juicer pre -a -o out_JBAT yahs.out.bin yahs.out_scaffolds_final.agp asm.fasta.fai > 	out_JBAT.log 2>&1
 
@@ -85,17 +85,17 @@ Gap-closing
 
 We run a gap-closing tool YaGCloser with the following command:
 
-# map the assembly to the reads and generate a sorted bam file
-minimap2 --secondary=yes -ax map-pb asm_chrlevel.fasta reads.fasta | samtools view -hSb - | samtools sort - > reference.sorted.bam
+	# map the assembly to the reads and generate a sorted bam file
+	minimap2 --secondary=yes -ax map-pb asm_chrlevel.fasta reads.fasta | samtools view -hSb - | samtools sort - > reference.sorted.bam
 
-# index the bam file
-samtools index reference.sorted.bam
+	# index the bam file
+	samtools index reference.sorted.bam
 
-# get gaps coordinate of the assembly
-detgaps asm_chrlevel.fasta > asm_chrlevel.gaps.bed
+	# get gaps coordinate of the assembly
+	detgaps asm_chrlevel.fasta > asm_chrlevel.gaps.bed
 
-# identify potential gaps to be filled
-python ./yagcloser/yagcloser.py -g asm_chrlevel.fasta reads.fasta -a reference.sorted.bam -b asm_chrlevel.gaps.bed -o yagcloser_output -f 100 -mins 10 -s  asm_chrlevel
+	# identify potential gaps to be filled
+	python ./yagcloser/yagcloser.py -g asm_chrlevel.fasta reads.fasta -a reference.sorted.bam -b asm_chrlevel.gaps.bed -o yagcloser_output -f 100 -mins 10 -s  asm_chrlevel
 
 Mitogenome assembly
 
@@ -145,36 +145,36 @@ To estimate divergence time using PAML (mcmctree), we used the following configu
 
 	#mcmctree config file
 
-seed = -1
-seqfile = ../../data/bovine_8sp.txt
-treefile = ../../data/bovine_8sp.treefile
-mcmcfile = mcmc.txt
-outfile = out.txt
+	seed = -1
+	seqfile = ../../data/bovine_8sp.txt
+	treefile = ../../data/bovine_8sp.treefile
+	mcmcfile = mcmc.txt
+	outfile = out.txt
 
-ndata = 1
-seqtype = 0    * 0: nucleotides; 1:codons; 2:AAs
-usedata = 2    * 0: no data (prior); 1:exact likelihood;
-                      * 2:approximate likelihood; 3:out.BV (in.BV)
-clock = 2    * 1: global clock; 2: independent rates; 3: correlated rates
-RootAge = '<1.0'  * safe constraint on root age, used if no fossil for root.
+	ndata = 1
+	seqtype = 0    * 0: nucleotides; 1:codons; 2:AAs
+	usedata = 2    * 0: no data (prior); 1:exact likelihood;
+	                      * 2:approximate likelihood; 3:out.BV (in.BV)
+	clock = 2    * 1: global clock; 2: independent rates; 3: correlated rates
+	RootAge = '<1.0'  * safe constraint on root age, used if no fossil for root.
 
-model = 4    * 0:JC69, 1:K80, 2:F81, 3:F84, 4:HKY85
-alpha = 0.5  * alpha for gamma rates at sites
-ncatG = 5    * No. categories in discrete gamma
+	model = 4    * 0:JC69, 1:K80, 2:F81, 3:F84, 4:HKY85
+	alpha = 0.5  * alpha for gamma rates at sites
+	ncatG = 5    * No. categories in discrete gamma
 
-cleandata = 1    * remove sites with ambiguity data (1:yes, 0:no)?
+	cleandata = 1    * remove sites with ambiguity data (1:yes, 0:no)?
 
-BDparas = 1 1 0   * birth, death, sampling
-kappa_gamma = 6 2     * gamma prior for kappa
-alpha_gamma = 1 1     * gamma prior for alpha
+	BDparas = 1 1 0   * birth, death, sampling
+	kappa_gamma = 6 2     * gamma prior for kappa
+	alpha_gamma = 1 1     * gamma prior for alpha
 
-rgene_gamma = 2 40 1   * gammaDir prior for rate for genes
-sigma2_gamma = 1 10 1   * gammaDir prior for sigma^2     (for clock=2 or 3)
+	rgene_gamma = 2 40 1   * gammaDir prior for rate for genes
+	sigma2_gamma = 1 10 1   * gammaDir prior for sigma^2     (for clock=2 or 3)
 
-print = 1   * 0: no mcmc sample; 1: everything except branch rates 2: everything
-burnin = 20000
-sampfreq = 200
-nsample = 20000
+	print = 1   * 0: no mcmc sample; 1: everything except branch rates 2: everything
+	burnin = 20000
+	sampfreq = 200
+	nsample = 20000
 
 
 Structural variations and SNPs
@@ -184,7 +184,7 @@ To determine the structural variations and SNPs with the water buffalo genome as
 	seqtk cutN -n 3 ref.fa > ref_no_gaps.fa
 	seqtk cutN -n 3 qry.fa > qry_no_gaps.fa
 
-We then aligned the genomes to the reference genome using nucmer alignment with the following parameters: 
+We then aligned the genomes to the reference genome using nucmer alignment with the following parameters:
 
 	nucmer --maxmatch -l 100 -c 500  ref_no_gaps.fa qry_no_gaps.fa -p out -t 24
 
